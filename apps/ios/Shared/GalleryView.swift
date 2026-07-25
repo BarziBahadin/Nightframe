@@ -19,9 +19,8 @@ struct GalleryView: View {
                 .ignoresSafeArea()
                 .scaleEffect(1.12)
                 .blur(radius: 18)
-                .opacity(0.3)
 
-            Color.black.opacity(0.74).ignoresSafeArea()
+            Color.black.opacity(0.72).ignoresSafeArea()
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 28) {
