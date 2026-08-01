@@ -9,6 +9,7 @@ const AdminEvents = lazy(() => import("@/components/admin-events").then((module)
 const AdminGuard = lazy(() => import("@/components/admin-guard").then((module) => ({ default: module.AdminGuard })));
 const AdminLogin = lazy(() => import("@/components/admin-login").then((module) => ({ default: module.AdminLogin })));
 const GalleryView = lazy(() => import("@/components/gallery-view").then((module) => ({ default: module.GalleryView })));
+const GuestUpload = lazy(() => import("@/components/guest-upload").then((module) => ({ default: module.GuestUpload })));
 
 export function AppRoutes() {
   return (
@@ -38,6 +39,7 @@ function RouteDocumentMeta() {
   const { pathname } = useLocation();
   useEffect(() => {
     const privateRoute = pathname.startsWith("/admin") || pathname.startsWith("/guest") || pathname.startsWith("/gallery");
+    const webUploadRoute = pathname.startsWith("/guest-upload/");
     const content = privateRoute ? "noindex, nofollow" : "index, follow";
     let meta = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     if (!meta) {
@@ -47,7 +49,7 @@ function RouteDocumentMeta() {
     }
     meta.content = content;
 
-    const canonicalURL = new URL(pathname, "https://one-shot-one-night.vercel.app").toString();
+    const canonicalURL = new URL(pathname, "https://nighframe1.vercel.app").toString();
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement("link");
@@ -55,6 +57,14 @@ function RouteDocumentMeta() {
       document.head.appendChild(canonical);
     }
     canonical.href = canonicalURL;
+
+    document.title = webUploadRoute ? "Private photo upload | Nightframe" : "Nightframe";
+    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (description) {
+      description.content = webUploadRoute
+        ? "Share your photos privately with the event host. No app download is required."
+        : "Create private QR event cameras, collect guest photos, and reveal a shared gallery on your schedule.";
+    }
   }, [pathname]);
   return null;
 }
@@ -73,7 +83,7 @@ function GuestRoute() {
 function GuestUploadRoute() {
   const { slug = "" } = useParams();
   const [search] = useSearchParams();
-  return <GalleryView slug={slug} accessToken={search.get("token") ?? search.get("t") ?? search.get("access_token") ?? ""} />;
+  return <GuestUpload slug={slug} accessToken={search.get("token") ?? search.get("t") ?? search.get("access_token") ?? ""} />;
 }
 
 function GalleryRoute() {

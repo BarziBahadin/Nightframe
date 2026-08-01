@@ -62,7 +62,7 @@ export function AdminEvents() {
           <Link key={item.event.id} to={`/admin/events/${item.event.id}`} className="surface grid gap-3 p-4 lg:grid-cols-[1fr_repeat(4,auto)] lg:items-center">
             <div>
               <h2 className="font-semibold">{item.event.name}</h2>
-              <p className="mt-1 text-sm text-ink/60">{item.event.slug}</p>
+              <p className="mt-1 text-sm text-ink/60">{item.event.slug} · {item.event.guest_experience === "web_upload" ? "Web upload" : "iOS app"}</p>
             </div>
             <Badge>{item.event.status}</Badge>
             <span className="text-sm">{item.guest_count} guests</span>

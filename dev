@@ -50,7 +50,7 @@ set -a
 source "$DEV_SECRETS"
 set +a
 
-export VITE_PUBLIC_WEB_URL="https://one-shot-one-night.vercel.app"
+export VITE_PUBLIC_WEB_URL="https://nighframe1.vercel.app"
 
 echo "Admin password: admin"
 

@@ -33,6 +33,15 @@ Deno.serve(async (req) => {
 
     if (!files.length) throw new HTTPError(400, "At least one file is required", "validation_error");
 
+    const [{ count: photoCount, error: photoCountError }, { count: mediaCount, error: mediaCountError }] = await Promise.all([
+      client.from("photos").select("id", { count: "exact", head: true }).eq("event_id", event.id).neq("status", "deleted"),
+      client.from("event_media").select("id", { count: "exact", head: true }).eq("event_id", event.id).eq("upload_status", "uploaded").neq("approval_status", "hidden")
+    ]);
+    if (photoCountError || mediaCountError) throw photoCountError || mediaCountError;
+    if ((photoCount || 0) + (mediaCount || 0) + files.length > event.max_total_photos) {
+      throw new HTTPError(409, "Event photo limit reached", "event_upload_limit");
+    }
+
     const sessionID = id26();
     const uploadUrls = [];
     const mediaRows = [];

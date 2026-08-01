@@ -4,8 +4,8 @@
       {
         "appIDs": ["7B5U63YN3A.com.oneshotonenight.app"],
         "components": [
-          { "/": "/guest/*", "comment": "Guest invitations" },
-          { "/": "/guest-upload/*", "comment": "Guest upload invitations" }
+          { "/": "/guest/*", "comment": "iOS app guest invitations" },
+          { "/": "/guest-upload/*", "exclude": true, "comment": "Web upload links always stay in the browser" }
         ]
       }
     ]

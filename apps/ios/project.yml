@@ -14,7 +14,7 @@ settings:
     GENERATE_INFOPLIST_FILE: false
     ENABLE_USER_SCRIPT_SANDBOXING: true
     API_BASE_URL: https://huakafctiajezinrzfle.supabase.co/functions/v1/api
-    PUBLIC_WEB_URL: https://one-shot-one-night.vercel.app
+    PUBLIC_WEB_URL: https://nighframe1.vercel.app
 targets:
   Nightframe:
     type: application

@@ -29,7 +29,7 @@ export default function HomePage() {
             alt=""
             width={80}
             height={80}
-            className="h-10 w-10 object-contain"
+            className="h-10 w-10 rounded-full object-cover"
             decoding="async"
             aria-hidden="true"
           />

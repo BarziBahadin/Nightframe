@@ -5,7 +5,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:oneshotonenight.app</string>
-		<string>applinks:one-shot-one-night.vercel.app</string>
+		<string>applinks:nighframe1.vercel.app</string>
 	</array>
 </dict>
 </plist>

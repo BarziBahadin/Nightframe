@@ -1,7 +1,8 @@
 const configuredApiBase = import.meta.env.VITE_API_BASE_URL;
 const defaultSupabaseApiBase = "https://huakafctiajezinrzfle.supabase.co/functions/v1/api";
-const publicWebBase = import.meta.env.VITE_PUBLIC_WEB_URL || "https://one-shot-one-night.vercel.app";
+const publicWebBase = import.meta.env.VITE_PUBLIC_WEB_URL || "https://nighframe1.vercel.app";
 const adminTokenKey = "oneshot_admin_token";
+const guestTokenKey = "oneshot_guest_device_token";
 const guestAccessTokenPrefix = "oneshot_guest_access:";
 
 export function apiBaseURL() {
@@ -53,12 +54,14 @@ export type EventRecord = {
   description: string;
   host_message?: string;
   mode: "standard_upload" | "disposable_camera" | "live_gallery" | "delayed_reveal";
+  guest_experience: "web_upload" | "ios_app";
   status: "open" | "locked" | "deleted";
   starts_at: string;
   ends_at: string;
   reveal_at: string;
   max_guests: number;
   max_photos_per_guest: number;
+  max_total_photos: number;
   allow_gallery_uploads: boolean;
   prefer_camera_capture: boolean;
   allow_immediate_gallery: boolean;
@@ -158,6 +161,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const token = localStorage.getItem(adminTokenKey);
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
+  if (path.startsWith("/api/v1/guest/")) {
+    headers.set("X-Guest-Token", guestDeviceToken());
+  }
   try {
     res = await fetch(`${apiBaseURL()}${path}`, {
       ...init,
@@ -176,6 +182,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw apiError;
   }
   return (await res.json()) as T;
+}
+
+function guestDeviceToken() {
+  let token = localStorage.getItem(guestTokenKey);
+  if (!token) {
+    token = randomID();
+    localStorage.setItem(guestTokenKey, token);
+  }
+  return token;
 }
 
 export async function adminLogin(password: string) {
@@ -299,6 +314,206 @@ export function adminUpdateGuest(eventID: string, guestID: string, status: Guest
     method: "PATCH",
     body: JSON.stringify({ status })
   });
+}
+
+export function joinGuest(slug: string, accessToken: string, displayName = "") {
+  return request<{ event: EventRecord; guest_name: string; remaining_shots: number; gallery_available: boolean }>(`/api/v1/guest/${slug}/join`, {
+    method: "POST",
+    body: JSON.stringify({ access_token: accessToken, display_name: displayName })
+  });
+}
+
+type PreparedGuestPhoto = {
+  photo_id: string;
+  upload_url: string;
+  upload_headers: Record<string, string>;
+  resumable_url?: string;
+  upload_signature?: string;
+  object_key: string;
+  upload_token: string;
+  dimensions: { width: number; height: number } | null;
+};
+
+async function prepareGuestPhoto(slug: string, accessToken: string, file: File, displayName: string): Promise<PreparedGuestPhoto> {
+  const contentType = file.type || contentTypeFromFileName(file.name);
+  const dimensions = await imageDimensions(file);
+  const presign = await request<Omit<PreparedGuestPhoto, "dimensions"> & { remaining_shots: number }>(
+    `/api/v1/guest/${slug}/uploads/presign`,
+    {
+      method: "POST",
+      headers: { "Idempotency-Key": randomID() },
+      body: JSON.stringify({
+        access_token: accessToken,
+        file_name: file.name,
+        content_type: contentType,
+        size_bytes: file.size,
+        width_px: dimensions?.width,
+        height_px: dimensions?.height,
+        display_name: displayName.trim()
+      })
+    }
+  );
+  return { ...presign, dimensions };
+}
+
+async function putGuestPhoto(prepared: PreparedGuestPhoto, file: File, onProgress: (loaded: number) => void) {
+  if (file.size <= 6 * 1024 * 1024) {
+    return standardSignedUpload(prepared, file, onProgress);
+  }
+
+  const tus = await import("tus-js-client");
+  if (!prepared.resumable_url || !prepared.upload_signature) {
+    return standardSignedUpload(prepared, file, onProgress);
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const upload = new tus.Upload(file, {
+      endpoint: prepared.resumable_url,
+      headers: { "x-signature": prepared.upload_signature! },
+      chunkSize: 6 * 1024 * 1024,
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        filename: file.name,
+        filetype: file.type || "application/octet-stream",
+        bucketName: "oneshotonenight",
+        objectName: prepared.object_key,
+        contentType: file.type || contentTypeFromFileName(file.name),
+        cacheControl: "3600"
+      },
+      onProgress: (bytesUploaded) => onProgress(bytesUploaded),
+      onError: (error) => reject(new APIError(error.message || "Upload failed", 0, "upload_failed")),
+      onSuccess: () => {
+        onProgress(file.size);
+        resolve();
+      }
+    });
+    void upload.findPreviousUploads().then((previousUploads) => {
+      if (previousUploads.length) upload.resumeFromPreviousUpload(previousUploads[0]);
+      upload.start();
+    }).catch(reject);
+  });
+}
+
+function standardSignedUpload(prepared: PreparedGuestPhoto, file: File, onProgress: (loaded: number) => void) {
+  return new Promise<void>((resolve, reject) => {
+    const upload = new XMLHttpRequest();
+    upload.open("PUT", prepared.upload_url);
+    Object.entries(prepared.upload_headers).forEach(([name, value]) => upload.setRequestHeader(name, value));
+    upload.upload.onprogress = (event) => onProgress(event.loaded);
+    upload.onerror = () => reject(new APIError("Upload failed", 0, "upload_failed"));
+    upload.onabort = () => reject(new APIError("Upload cancelled", 0, "upload_cancelled"));
+    upload.onload = () => {
+      if (upload.status >= 200 && upload.status < 300) {
+        onProgress(file.size);
+        resolve();
+      } else {
+        reject(new APIError("Upload failed", upload.status, "upload_failed"));
+      }
+    };
+    upload.send(file);
+  });
+}
+
+function completeGuestPhoto(slug: string, accessToken: string, prepared: PreparedGuestPhoto, displayName: string) {
+  return request<{ photo: PhotoRecord; remaining_shots: number }>(`/api/v1/guest/${slug}/photos`, {
+    method: "POST",
+    body: JSON.stringify({
+      access_token: accessToken,
+      photo_id: prepared.photo_id,
+      upload_token: prepared.upload_token,
+      width_px: prepared.dimensions?.width,
+      height_px: prepared.dimensions?.height,
+      display_name: displayName.trim(),
+      message: ""
+    })
+  });
+}
+
+export async function uploadGuestPhotos(
+  slug: string,
+  accessToken: string,
+  files: File[],
+  displayName: string,
+  onResult: (file: File, result: { ok: boolean; message: string; remaining_shots?: number }) => void,
+  onProgress?: (progress: { file: File; loaded: number; total: number; percent: number }) => void
+) {
+  const prepared = new Array<PreparedGuestPhoto | null>(files.length).fill(null);
+  const prepareWorkers = Array.from({ length: Math.min(3, files.length) }, async (_, workerIndex) => {
+    for (let index = workerIndex; index < files.length; index += 3) {
+      try {
+        prepared[index] = await prepareGuestPhoto(slug, accessToken, files[index], displayName);
+      } catch (error) {
+        onResult(files[index], { ok: false, message: error instanceof Error ? error.message : "Upload failed" });
+      }
+    }
+  });
+  await Promise.all(prepareWorkers);
+
+  const totalBytes = files.reduce((total, file, index) => total + (prepared[index] ? file.size : 0), 0);
+  const loadedByFile = new Map<File, number>();
+  let remainingShots: number | undefined;
+  const uploadWorkers = Array.from({ length: Math.min(3, files.length) }, async (_, workerIndex) => {
+    for (let index = workerIndex; index < files.length; index += 3) {
+      const upload = prepared[index];
+      const file = files[index];
+      if (!upload) continue;
+      try {
+        await putGuestPhoto(upload, file, (loaded) => {
+          loadedByFile.set(file, loaded);
+          const totalLoaded = [...loadedByFile.values()].reduce((total, value) => total + value, 0);
+          onProgress?.({ file, loaded: totalLoaded, total: totalBytes, percent: totalBytes ? Math.round((totalLoaded / totalBytes) * 100) : 0 });
+        });
+        const result = await completeGuestPhoto(slug, accessToken, upload, displayName);
+        remainingShots = result.remaining_shots;
+        onResult(file, { ok: true, message: "Uploaded", remaining_shots: result.remaining_shots });
+      } catch (error) {
+        onResult(file, { ok: false, message: error instanceof Error ? error.message : "Upload failed" });
+      }
+    }
+  });
+  await Promise.all(uploadWorkers);
+  return { remaining_shots: remainingShots };
+}
+
+async function imageDimensions(file: File): Promise<{ width: number; height: number } | null> {
+  if (!file.type.startsWith("image/")) return null;
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    const loaded = new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Unable to read image dimensions"));
+    });
+    image.src = url;
+    await loaded;
+    return image.naturalWidth && image.naturalHeight ? { width: image.naturalWidth, height: image.naturalHeight } : null;
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function contentTypeFromFileName(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".heic")) return "image/heic";
+  if (lower.endsWith(".heif")) return "image/heif";
+  return "image/jpeg";
+}
+
+function randomID() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  if (!globalThis.crypto?.getRandomValues) throw new APIError("Secure browser crypto is required.", 400, "crypto_unavailable");
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((value) => value.toString(16).padStart(2, "0"));
+  return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
 }
 
 export function guestGallery(slug: string, accessToken: string, options?: { before?: string | null; limit?: number }) {

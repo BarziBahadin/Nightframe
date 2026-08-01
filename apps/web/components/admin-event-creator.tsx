@@ -17,6 +17,7 @@ export function AdminEventCreator() {
   const defaults = useMemo(() => defaultSchedule(), []);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [guestExperience, setGuestExperience] = useState<"web_upload" | "ios_app">("web_upload");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,15 +32,17 @@ export function AdminEventCreator() {
       const out = await adminCreateEvent({
         name: form.get("name"),
         description: form.get("description"),
-        mode: reveal === "during" ? "live_gallery" : "delayed_reveal",
+        guest_experience: guestExperience,
+        mode: guestExperience === "web_upload" ? "standard_upload" : reveal === "during" ? "live_gallery" : "delayed_reveal",
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
         reveal_at: (reveal === "during" ? startsAt : endsAt).toISOString(),
         max_guests: Number(form.get("max_guests")),
         max_photos_per_guest: Number(form.get("max_photos_per_guest")),
+        max_total_photos: Number(form.get("max_total_photos")),
         offline_upload_grace_hours: Number(form.get("offline_upload_grace_hours")),
-        allow_gallery_uploads: form.get("allow_gallery_uploads") === "on",
-        prefer_camera_capture: form.get("prefer_camera_capture") === "on",
+        allow_gallery_uploads: guestExperience === "web_upload" || form.get("allow_gallery_uploads") === "on",
+        prefer_camera_capture: guestExperience === "ios_app" && form.get("prefer_camera_capture") === "on",
         allow_immediate_gallery: false,
         auto_approve_photos: true
       });
@@ -56,7 +59,7 @@ export function AdminEventCreator() {
         <header className="lg:sticky lg:top-10">
           <p className="eyebrow">New event</p>
           <h2 className="editorial-title mt-4">Set the scene.</h2>
-          <p className="mt-5 max-w-sm leading-7 text-moss">A name, a time, and a reveal. We’ll turn it into a private camera guests can open from one beautiful QR code.</p>
+          <p className="mt-5 max-w-sm leading-7 text-moss">A name, a time, and one private QR code. Choose a simple web uploader now while keeping the iOS experience ready for later.</p>
         </header>
 
         <form onSubmit={onSubmit} className="surface grid gap-6 p-6 sm:p-8">
@@ -66,14 +69,27 @@ export function AdminEventCreator() {
             <DateTimePicker label="Ends" name="ends_at" required defaultValue={defaults.end} />
           </div>
           <NativeSelect
-            label="When can guests see the gallery?"
-            name="gallery_reveal"
-            defaultValue="after"
+            label="Guest experience"
+            name="guest_experience"
+            value={guestExperience}
+            onChange={(event) => setGuestExperience(event.target.value as "web_upload" | "ios_app")}
             options={[
-              { value: "after", label: "After the event ends" },
-              { value: "during", label: "During the event" }
+              { value: "web_upload", label: "Web photo upload — no app required" },
+              { value: "ios_app", label: "iOS app experience" }
             ]}
+            hint={guestExperience === "web_upload" ? "Guests only see a private photo uploader. The gallery stays host-only." : "Preserves the camera and reveal experience for the iOS app."}
           />
+          {guestExperience === "ios_app" ? (
+            <NativeSelect
+              label="When can guests see the gallery?"
+              name="gallery_reveal"
+              defaultValue="after"
+              options={[
+                { value: "after", label: "After the event ends" },
+                { value: "during", label: "During the event" }
+              ]}
+            />
+          ) : <input type="hidden" name="gallery_reveal" value="after" />}
 
           <details className="border-t hairline pt-5">
             <summary className="flex cursor-pointer list-none items-center justify-between font-semibold">
@@ -84,10 +100,15 @@ export function AdminEventCreator() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input label="Guest limit" name="max_guests" type="number" defaultValue="250" min="1" />
                 <Input label="Photos per guest" name="max_photos_per_guest" type="number" defaultValue="12" min="1" />
-                <Input label="Offline retry hours" name="offline_upload_grace_hours" type="number" defaultValue="24" min="1" max="168" />
+                <Input label="Total event photos" name="max_total_photos" type="number" defaultValue="500" min="1" max="1000" />
+                {guestExperience === "ios_app" ? <Input label="Offline retry hours" name="offline_upload_grace_hours" type="number" defaultValue="24" min="1" max="168" /> : <input type="hidden" name="offline_upload_grace_hours" value="24" />}
               </div>
-              <Checkbox name="allow_gallery_uploads" defaultSelected label="Let guests choose existing photos" />
-              <Checkbox name="prefer_camera_capture" defaultSelected label="Open the camera first" />
+              {guestExperience === "ios_app" ? (
+                <>
+                  <Checkbox name="allow_gallery_uploads" defaultSelected label="Let guests choose existing photos" />
+                  <Checkbox name="prefer_camera_capture" defaultSelected label="Open the camera first" />
+                </>
+              ) : null}
             </div>
           </details>
 

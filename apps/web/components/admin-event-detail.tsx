@@ -7,6 +7,7 @@ import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
 import { TextArea } from "@/components/base/textarea/textarea";
+import { NativeSelect } from "@/components/base/select/select-native";
 import { FileUploadDropZone } from "@/components/application/file-upload/file-upload-base";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import {
@@ -124,7 +125,7 @@ export function AdminEventDetailView({ eventID }: { eventID: string }) {
       </header>
 
       <nav className="mb-8 flex gap-1 overflow-x-auto border-b hairline">
-        {([["event", "Event"], ["guests", `Guests (${detail.guests.length})`], ["settings", "Settings"]] as [Section, string][]).map(([value, label]) => (
+        {([["event", "Event"], ["guests", `${detail.event.guest_experience === "web_upload" ? "Contributors" : "Guests"} (${detail.guests.length})`], ["settings", "Settings"]] as [Section, string][]).map(([value, label]) => (
           <Button key={value} color="tertiary" onClick={() => setSection(value)} className={`rounded-none border-b-2 px-5 py-3 ${section === value ? "border-amber text-ink" : "border-transparent text-moss"}`}>
             {label}
           </Button>
@@ -235,8 +236,8 @@ function EventWorkspace({ detail, guestLink, galleryLink, qr, onToast, onChange 
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/90" />
         <div className="relative">
           <p className="text-[0.68rem] font-bold uppercase text-white/52">Upload QR code</p>
-          <h3 className="mt-3 text-4xl font-semibold leading-[0.92]">Scan. Shoot.<br />Remember.</h3>
-          <p className="mt-3 text-sm leading-6 text-white/58">Guests can send one photo or many photos by scanning this code. No app download is required.</p>
+          <h3 className="mt-3 text-4xl font-semibold leading-[0.92]">Scan. Share.<br />Remember.</h3>
+          <p className="mt-3 text-sm leading-6 text-white/58">{detail.event.guest_experience === "web_upload" ? "Guests can privately send one photo or many photos from their browser. No app download is required." : "Guests open the private iOS event experience from this invitation."}</p>
         </div>
         <div>
         </div>
@@ -247,19 +248,23 @@ function EventWorkspace({ detail, guestLink, galleryLink, qr, onToast, onChange 
             {copiedLink === "guest" ? "Copied" : "Copy link"}
           </Button>
           <Button size="sm" color="secondary" iconLeading={Download} onClick={saveQR}>Save QR</Button>
-          <Button size="sm" color="secondary" iconLeading={Copy} onClick={() => void copyPanelLink(galleryLink, "gallery", "Host gallery link copied.")}>
-            {copiedLink === "gallery" ? "Copied" : "Copy gallery"}
-          </Button>
+          {detail.event.guest_experience === "ios_app" ? (
+            <Button size="sm" color="secondary" iconLeading={Copy} onClick={() => void copyPanelLink(galleryLink, "gallery", "Gallery link copied.")}>
+              {copiedLink === "gallery" ? "Copied" : "Copy gallery"}
+            </Button>
+          ) : null}
         </div>
-        <div className="relative mt-3 grid gap-2">
-          <Button href={galleryLink} target="_blank" rel="noreferrer" iconLeading={Eye}>Open host gallery</Button>
-        </div>
+        {detail.event.guest_experience === "ios_app" ? (
+          <div className="relative mt-3 grid gap-2">
+            <Button href={galleryLink} target="_blank" rel="noreferrer" iconLeading={Eye}>Open guest gallery</Button>
+          </div>
+        ) : null}
         <p className="relative mt-4 break-all text-[0.65rem] text-white/40">{guestLink}</p>
       </aside>
 
       <div className="grid gap-5">
         <section className="grid grid-cols-2 border-y hairline sm:grid-cols-4">
-          <Metric label="Guests" value={detail.guests.length} />
+          <Metric label={detail.event.guest_experience === "web_upload" ? "Contributors" : "Guests"} value={detail.guests.length} />
           <Metric label="Photos" value={photos.length} />
           <Metric label="Hidden" value={photos.filter((photo) => photo.status === "hidden").length} />
           <Metric label="Storage" value={formatBytes(detail.stats.storage_bytes)} />
@@ -272,7 +277,7 @@ function EventWorkspace({ detail, guestLink, galleryLink, qr, onToast, onChange 
               <h3 className="text-2xl font-bold">Event photos</h3>
             </div>
             <div className="flex flex-wrap items-center justify-end gap-3">
-              <span className="text-sm text-moss">{detail.event.auto_approve_photos ? "Publishing automatically" : "Manual approval"}</span>
+              <span className="text-sm text-moss">{detail.event.guest_experience === "web_upload" ? "Visible only to the host" : detail.event.auto_approve_photos ? "Publishing automatically" : "Manual approval"}</span>
               {photos.length ? (
                 <Button color="secondary" size="sm" iconLeading={Download} onClick={() => void downloadPhotos()}>Download all</Button>
               ) : null}
@@ -366,8 +371,10 @@ function SettingsPanel({ event, onChange }: { event: EventRecord; onChange: () =
   const [coverURL, setCoverURL] = useState(event.cover_url || "");
   const [coverStatus, setCoverStatus] = useState("");
   const [coverBusy, setCoverBusy] = useState(false);
+  const [guestExperience, setGuestExperience] = useState(event.guest_experience);
 
   useEffect(() => setCoverURL(event.cover_url || ""), [event.cover_url]);
+  useEffect(() => setGuestExperience(event.guest_experience), [event.guest_experience]);
 
   async function uploadCover(files: FileList) {
     const file = files[0];
@@ -396,14 +403,17 @@ function SettingsPanel({ event, onChange }: { event: EventRecord; onChange: () =
     await adminUpdateEvent(event.id, {
       name: form.get("name"),
       description: form.get("description"),
+      guest_experience: guestExperience,
+      mode: guestExperience === "web_upload" ? "standard_upload" : event.mode === "standard_upload" ? "delayed_reveal" : event.mode,
       starts_at: new Date(String(form.get("starts_at"))).toISOString(),
       ends_at: new Date(String(form.get("ends_at"))).toISOString(),
-      reveal_at: new Date(String(form.get("reveal_at"))).toISOString(),
+      reveal_at: guestExperience === "web_upload" ? new Date(String(form.get("ends_at"))).toISOString() : new Date(String(form.get("reveal_at"))).toISOString(),
       max_guests: Number(form.get("max_guests")),
       max_photos_per_guest: Number(form.get("max_photos_per_guest")),
+      max_total_photos: Number(form.get("max_total_photos")),
       offline_upload_grace_hours: Number(form.get("offline_upload_grace_hours")),
-      allow_gallery_uploads: form.get("allow_gallery_uploads") === "on",
-      prefer_camera_capture: form.get("prefer_camera_capture") === "on",
+      allow_gallery_uploads: guestExperience === "web_upload" || form.get("allow_gallery_uploads") === "on",
+      prefer_camera_capture: guestExperience === "ios_app" && form.get("prefer_camera_capture") === "on",
       auto_approve_photos: form.get("auto_approve_photos") === "on"
     });
     setSaved(true);
@@ -415,7 +425,7 @@ function SettingsPanel({ event, onChange }: { event: EventRecord; onChange: () =
       <section className="grid gap-3" aria-labelledby="event-cover-label">
         <div>
           <h3 id="event-cover-label" className="text-sm font-semibold text-primary">Event cover photo</h3>
-          <p className="mt-1 text-sm text-moss">Shown on the guest hero and as the album cover.</p>
+          <p className="mt-1 text-sm text-moss">{guestExperience === "web_upload" ? "Shown behind the private guest uploader." : "Shown on the guest hero and as the album cover."}</p>
         </div>
         <div className="relative aspect-[16/9] overflow-hidden rounded-lg bg-skywash ring-1 ring-primary">
           <img
@@ -440,19 +450,35 @@ function SettingsPanel({ event, onChange }: { event: EventRecord; onChange: () =
       <div className="my-1 border-t hairline" />
       <Input label="Event name" name="name" defaultValue={event.name} isRequired size="md" />
       <TextArea label="Description" name="description" defaultValue={event.description} textAreaClassName="min-h-24" />
-      <div className="grid gap-4 sm:grid-cols-3">
+      <NativeSelect
+        label="Guest experience"
+        name="guest_experience"
+        value={guestExperience}
+        onChange={(inputEvent) => setGuestExperience(inputEvent.target.value as EventRecord["guest_experience"])}
+        options={[
+          { value: "web_upload", label: "Web photo upload — host-only gallery" },
+          { value: "ios_app", label: "iOS app experience" }
+        ]}
+        hint={guestExperience === "web_upload" ? "The QR opens a browser uploader with no app language. Guests cannot open the gallery." : "The invitation keeps the app camera and guest gallery experience."}
+      />
+      <div className={`grid gap-4 ${guestExperience === "ios_app" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
         <DateTimePicker label="Starts" name="starts_at" defaultValue={toLocalInput(event.starts_at)} required />
         <DateTimePicker label="Ends" name="ends_at" defaultValue={toLocalInput(event.ends_at)} required />
-        <DateTimePicker label="Gallery reveal" name="reveal_at" defaultValue={toLocalInput(event.reveal_at)} required />
+        {guestExperience === "ios_app" ? <DateTimePicker label="Gallery reveal" name="reveal_at" defaultValue={toLocalInput(event.reveal_at)} required /> : null}
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Guest limit" name="max_guests" type="number" min="1" defaultValue={String(event.max_guests)} />
         <Input label="Photos per guest" name="max_photos_per_guest" type="number" min="1" defaultValue={String(event.max_photos_per_guest)} />
-        <Input label="Offline retry hours" name="offline_upload_grace_hours" type="number" min="1" max="168" defaultValue={String(event.offline_upload_grace_hours || 24)} />
+        <Input label="Total event photos" name="max_total_photos" type="number" min="1" max="1000" defaultValue={String(event.max_total_photos || 500)} />
+        {guestExperience === "ios_app" ? <Input label="Offline retry hours" name="offline_upload_grace_hours" type="number" min="1" max="168" defaultValue={String(event.offline_upload_grace_hours || 24)} /> : <input type="hidden" name="offline_upload_grace_hours" value={String(event.offline_upload_grace_hours || 24)} />}
       </div>
-      <Checkbox name="allow_gallery_uploads" defaultSelected={event.allow_gallery_uploads} label="Allow gallery uploads" />
-      <Checkbox name="prefer_camera_capture" defaultSelected={event.prefer_camera_capture} label="Prefer camera capture" />
-      <Checkbox name="auto_approve_photos" defaultSelected={event.auto_approve_photos} label="Publish uploads automatically" />
+      {guestExperience === "ios_app" ? (
+        <>
+          <Checkbox name="allow_gallery_uploads" defaultSelected={event.allow_gallery_uploads} label="Allow gallery uploads" />
+          <Checkbox name="prefer_camera_capture" defaultSelected={event.prefer_camera_capture} label="Prefer camera capture" />
+          <Checkbox name="auto_approve_photos" defaultSelected={event.auto_approve_photos} label="Publish uploads automatically" />
+        </>
+      ) : <input type="hidden" name="auto_approve_photos" value="on" />}
       <div className="flex items-center gap-3">
         <Button type="submit" size="md" iconLeading={Settings}>Save settings</Button>
         {saved ? <span className="text-sm font-semibold text-amber">Saved</span> : null}

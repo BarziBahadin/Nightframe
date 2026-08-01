@@ -1,17 +1,14 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.95.0";
 
 export const bucket = "oneshotonenight";
-const webOrigin = new URL(Deno.env.get("PUBLIC_WEB_URL") || "https://one-shot-one-night.vercel.app").origin;
+const webOrigin = new URL(Deno.env.get("PUBLIC_WEB_URL") || "https://nighframe1.vercel.app").origin;
 
 export const allowedTypes = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/heic",
-  "image/heif",
-  "video/mp4",
-  "video/quicktime",
-  "video/webm"
+  "image/heif"
 ]);
 
 export const cors = {
@@ -42,7 +39,7 @@ export async function config(client: SupabaseClient) {
 export async function validGuestUploadEvent(client: SupabaseClient, slug: string, token: string) {
   const { data, error } = await client
     .from("events")
-    .select("id,slug,name,title,description,host_message,status,max_photos_per_guest,auto_approve_photos,access_token_hash,guest_upload_enabled,guest_upload_token_hash")
+    .select("id,slug,name,title,description,host_message,guest_experience,status,starts_at,ends_at,max_photos_per_guest,max_total_photos,auto_approve_photos,access_token_hash,guest_upload_enabled,guest_upload_token_hash")
     .eq("slug", slug)
     .neq("status", "deleted")
     .single();
@@ -51,6 +48,12 @@ export async function validGuestUploadEvent(client: SupabaseClient, slug: string
   if (data.status !== "open" || !data.guest_upload_enabled) {
     throw new HTTPError(403, "Guest uploads are not enabled for this event", "guest_upload_disabled");
   }
+  if (data.guest_experience !== "web_upload") {
+    throw new HTTPError(403, "This event uses the app experience", "guest_upload_disabled");
+  }
+  const now = Date.now();
+  if (now < new Date(data.starts_at).getTime()) throw new HTTPError(403, "Event has not started", "event_not_started");
+  if (now > new Date(data.ends_at).getTime()) throw new HTTPError(403, "Event has ended", "event_ended");
 
   const cfg = await config(client);
   const expectedHash = data.guest_upload_token_hash || data.access_token_hash;
@@ -126,7 +129,7 @@ export function cleanFileName(value: unknown, fallback: string) {
 
 export function positiveSize(value: unknown) {
   const size = Number(value);
-  if (!Number.isInteger(size) || size <= 0 || size > 104857600) {
+  if (!Number.isInteger(size) || size <= 0 || size > 25 * 1024 * 1024) {
     throw new HTTPError(400, "Invalid file size", "validation_error");
   }
   return size;

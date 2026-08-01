@@ -1,4 +1,4 @@
-const VERSION = "nightframe-v14";
+const VERSION = "nightframe-v15";
 const APP_SHELL_CACHE = `${VERSION}-app-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 

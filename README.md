@@ -77,10 +77,10 @@ If Vite is already running, `./dev` prints the current local and network URLs in
 mode-`0600` `.dev-secrets` file and prints the current development admin
 password when it starts. Delete `.dev-secrets` to rotate all local credentials.
 
-Guest links and QR codes use the machine’s current LAN IP, for example:
+Web-upload guest links and QR codes use the machine’s current LAN IP, for example:
 
 ```text
-https://one-shot-one-night.vercel.app/guest/event-slug?t=token
+https://nighframe1.vercel.app/guest-upload/event-slug?token=token
 ```
 
 The IP can change when Wi-Fi/router changes. Restart Vite if the printed network address changes.
@@ -88,8 +88,10 @@ The IP can change when Wi-Fi/router changes. Restart Vite if the printed network
 Production guest QR codes should point to:
 
 ```text
-https://your-domain.com/guest/event-slug?t=token
+https://your-domain.com/guest-upload/event-slug?token=token
 ```
+
+iOS app invitations use the separate `/guest/...` route.
 
 Set these frontend environment variables in production:
 
@@ -102,7 +104,7 @@ VITE_PUBLIC_WEB_URL=https://your-domain.com
 
 1. Open `/admin`.
 2. Sign in with the admin password.
-3. Create an event with name, schedule, and gallery reveal timing.
+3. Create an event and choose either **Web photo upload** or the future **iOS app experience**.
 4. Share the QR code or guest link.
 5. Manage one event workspace:
    - QR and guest link
@@ -112,18 +114,17 @@ VITE_PUBLIC_WEB_URL=https://your-domain.com
    - Settings
 6. Use **Download all** in the photos area to download every non-deleted event photo as a ZIP.
 
-## Guest Flow
+## Web Upload Guest Flow
 
 1. Scan the QR code.
-2. Join the private guest page.
-3. Take a photo or choose one from the device gallery.
-4. Add an optional message.
-5. Upload the photo.
-6. Open the gallery when the reveal rules allow it.
+2. Open the private `/guest-upload/...` page in the browser.
+3. Enter a name and choose one photo or several photos from the device gallery.
+4. Keep the page open while the photos upload directly to private object storage.
+5. Receive confirmation when the host has received the photos.
 
-Guests do not enter tokens manually when using a valid QR link. The QR link is static for the event, and each browser gets its own server-side guest session through a generated device/session ID.
+Web-upload guests never see the event gallery. The authenticated host reviews and downloads uploads from the admin workspace. `/guest/...` remains reserved for iOS app invitations and `/gallery/...` remains available only for app-experience events.
 
-The web `/guest/...` page supports browser uploads through presigned object-storage URLs. Hosts can configure the grace window for late uploads after the event ends.
+Guests do not enter tokens manually when using a valid QR link. The QR link is static for the event, and each browser receives a random device identifier used to enforce the event's per-guest limit.
 
 ## Phone Testing
 
