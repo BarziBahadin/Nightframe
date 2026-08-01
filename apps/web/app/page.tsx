@@ -21,7 +21,7 @@ const steps = [
 
 export default function HomePage() {
   return (
-    <main className="app-frame flex flex-col gap-10">
+    <main className="app-frame flex flex-col gap-16 sm:gap-20 lg:gap-28">
       <nav className="flex items-center border-b hairline pb-5">
         <Link to="/" className="flex items-center gap-3 font-bold tracking-tight">
           <img
@@ -37,7 +37,7 @@ export default function HomePage() {
         </Link>
       </nav>
 
-      <section className="grid min-h-[78vh] gap-10 py-8 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:py-14">
+      <section className="grid min-h-[78vh] gap-12 py-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:gap-16 lg:py-16">
         <div className="relative z-10">
           <p className="eyebrow mb-4">One night. Every perspective.</p>
           <h1 className="editorial-title max-w-3xl">The night, as everyone saw it.</h1>
@@ -59,7 +59,7 @@ export default function HomePage() {
         <HeroPhotos />
       </section>
 
-      <section className="grid gap-5 py-10 lg:grid-cols-[1.15fr_0.85fr]">
+      <section className="grid gap-7 py-12 lg:grid-cols-[1.15fr_0.85fr] lg:py-16">
         <figure className="group relative min-h-[520px] overflow-hidden rounded-[2rem]">
           <ResponsivePhoto
             name="jonathan-borba-eg-72fI9wK4-unsplash"
@@ -75,7 +75,7 @@ export default function HomePage() {
             <h2 className="mt-3 max-w-xl text-4xl font-semibold text-white sm:text-5xl">The moments between the moments.</h2>
           </figcaption>
         </figure>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+        <div className="grid gap-7 sm:grid-cols-2 lg:grid-cols-1">
           <figure className="relative min-h-64 overflow-hidden rounded-[2rem]">
             <ResponsivePhoto
               name="golden-event"
@@ -103,9 +103,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="features" className="grid gap-4 lg:grid-cols-3">
+      <section id="features" className="grid gap-6 py-4 lg:grid-cols-3 lg:py-8">
         {features.map(([Icon, title, copy]) => (
-          <article key={String(title)} className="surface p-5">
+          <article key={String(title)} className="surface p-6 sm:p-7">
             <Icon className="h-7 w-7 text-coral" aria-hidden="true" />
             <h2 className="mt-4 text-xl font-semibold">{title as string}</h2>
             <p className="mt-2 leading-7 text-moss">{copy as string}</p>
@@ -113,7 +113,7 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section id="how-it-works" className="grid scroll-mt-8 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+      <section id="how-it-works" className="grid scroll-mt-8 gap-10 py-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-16 lg:py-10">
         <div>
           <p className="eyebrow mb-3">How it works</p>
           <h2 className="text-3xl font-black leading-tight sm:text-5xl">Three steps. No guest accounts. Nothing to explain.</h2>
@@ -121,9 +121,9 @@ export default function HomePage() {
             Nightframe stays out of the way during the event and brings everyone back together afterward.
           </p>
         </div>
-        <div className="grid gap-3">
+        <div className="grid gap-5">
           {steps.map(([title, copy], index) => (
-            <article key={title} className="surface grid gap-4 p-4 sm:grid-cols-[auto_1fr] sm:items-start">
+            <article key={title} className="surface grid gap-4 p-5 sm:grid-cols-[auto_1fr] sm:items-start sm:p-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-md bg-amber text-sm font-semibold text-linen">{index + 1}</div>
               <div>
                 <h3 className="font-semibold">{title}</h3>
@@ -134,7 +134,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f1b2d] p-7 shadow-[0_32px_100px_rgba(0,0,0,0.32)] sm:p-10">
+      <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f1b2d] p-8 shadow-[0_32px_100px_rgba(0,0,0,0.32)] sm:p-12 lg:p-14">
         <img src="/app-icon-192.png" alt="" className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-[4rem] object-contain opacity-[0.06]" aria-hidden="true" />
         <div className="relative">
           <p className="eyebrow mb-3">Your night deserves every angle</p>
