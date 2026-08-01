@@ -20,7 +20,7 @@ export function functionsBaseURL() {
 
 export function guestURL(slug: string, accessToken: string) {
   const base = publicWebBaseURL();
-  return `${base}/gallery/${slug}?token=${encodeURIComponent(accessToken)}`;
+  return `${base}/guest/${slug}?token=${encodeURIComponent(accessToken)}`;
 }
 
 export function rememberGuestAccessToken(slug: string, token: string) {

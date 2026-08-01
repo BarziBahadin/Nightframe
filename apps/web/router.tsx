@@ -1,6 +1,7 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useParams, useSearchParams } from "react-router-dom";
 import HomePage from "@/app/page";
+import { joinGuest } from "@/lib/api";
 
 const AdminDashboard = lazy(() => import("@/components/admin-dashboard").then((module) => ({ default: module.AdminDashboard })));
 const AdminEventCreator = lazy(() => import("@/components/admin-event-creator").then((module) => ({ default: module.AdminEventCreator })));
@@ -77,7 +78,28 @@ function AdminEventRoute() {
 function GuestRoute() {
   const { slug = "" } = useParams();
   const [search] = useSearchParams();
-  return <GalleryView slug={slug} accessToken={search.get("token") ?? search.get("t") ?? search.get("access_token") ?? ""} />;
+  const accessToken = search.get("token") ?? search.get("t") ?? search.get("access_token") ?? "";
+  const [experience, setExperience] = useState<"checking" | "web_upload" | "ios_app">("checking");
+
+  useEffect(() => {
+    let active = true;
+    joinGuest(slug, accessToken, "")
+      .then((response) => {
+        if (active) setExperience(response.event.guest_experience);
+      })
+      .catch(() => {
+        if (active) setExperience("ios_app");
+      });
+    return () => { active = false; };
+  }, [accessToken, slug]);
+
+  if (experience === "checking") {
+    return <main className="app-frame grid place-items-center text-moss">Opening invitation...</main>;
+  }
+  if (experience === "web_upload") {
+    return <Navigate to={`/guest-upload/${encodeURIComponent(slug)}?token=${encodeURIComponent(accessToken)}`} replace />;
+  }
+  return <GalleryView slug={slug} accessToken={accessToken} />;
 }
 
 function GuestUploadRoute() {
