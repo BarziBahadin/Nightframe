@@ -153,6 +153,52 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="py-6 lg:py-10">
+        <div className="mb-10 max-w-3xl sm:mb-14">
+          <p className="eyebrow mb-3">Part of the celebration</p>
+          <h2 className="text-3xl font-black leading-tight sm:text-5xl">A small detail that collects the whole night.</h2>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-moss">Place the event QR where guests naturally gather. It becomes an invitation to share the personal moments happening at every table and in every corner.</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-3">
+          <figure className="group relative aspect-[4/5] overflow-hidden rounded-[2rem]">
+            <ResponsivePhoto
+              name="wedding-qr-upload-sign"
+              width={736}
+              height={1008}
+              alt="A private photo upload QR sign displayed at an outdoor wedding"
+              sizes="(min-width: 768px) 33vw, 100vw"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <figcaption className="absolute inset-x-0 bottom-0 p-6 text-xl font-semibold text-white">One welcoming scan.</figcaption>
+          </figure>
+          <figure className="group relative aspect-[4/5] overflow-hidden rounded-[2rem] md:translate-y-8">
+            <ResponsivePhoto
+              name="garden-wedding-dinner"
+              width={828}
+              height={1009}
+              alt="Wedding guests sharing dinner beneath garden string lights"
+              sizes="(min-width: 768px) 33vw, 100vw"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <figcaption className="absolute inset-x-0 bottom-0 p-6 text-xl font-semibold text-white">Every table has a story.</figcaption>
+          </figure>
+          <figure className="group relative aspect-[4/5] overflow-hidden rounded-[2rem]">
+            <ResponsivePhoto
+              name="illuminated-event-table"
+              width={717}
+              height={914}
+              alt="An outdoor celebration table illuminated by warm hanging lights"
+              sizes="(min-width: 768px) 33vw, 100vw"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+            <figcaption className="absolute inset-x-0 bottom-0 p-6 text-xl font-semibold text-white">The details worth keeping.</figcaption>
+          </figure>
+        </div>
+      </section>
+
       <section className="grid gap-7 lg:grid-cols-2">
         <article className="surface p-7 sm:p-9">
           <Users className="h-8 w-8 text-coral" aria-hidden="true" />
