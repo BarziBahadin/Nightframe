@@ -1,22 +1,34 @@
 import { Link } from "react-router-dom";
-import { Camera, Images, QrCode, ShieldCheck } from "lucide-react";
+import { Download, Images, QrCode, ShieldCheck, Upload, Users } from "lucide-react";
 
 const promises = [
-  ["Made for iPhone", "Capture and upload from the phone app"],
-  ["Private by design", "Only people with your link get in"],
-  ["Your reveal, your time", "Keep the gallery hidden until you’re ready"]
+  ["No app required", "The upload page opens in any modern phone browser"],
+  ["One private QR", "A simple link connects every guest to the event"],
+  ["Host-only collection", "Guests contribute without seeing anyone else’s photos"]
 ];
 
 const features = [
-  [Camera, "Every perspective", "The dance floor, the quiet table, the blurry midnight selfie—collect the moments one photographer could never see alone."],
-  [ShieldCheck, "Private by design", "Your event stays behind one private link. You decide when uploads close, what appears, and who can return to the gallery."],
-  [Images, "A reveal worth waiting for", "Keep every photo hidden during the event, then open one beautiful shared gallery when the night is ready to be relived."]
+  [QrCode, "One scan to join", "Share one private QR at the venue or send the event link directly. Guests arrive at a page made only for your event."],
+  [Upload, "One photo or a whole batch", "Guests choose photos already on their phone and send several at once. There is no account setup and nothing new to install."],
+  [ShieldCheck, "Private by design", "The guest page is for contributing only. Other uploads and host controls remain hidden from everyone except the organizer."],
+  [Images, "Everything in one place", "Every contribution arrives in the event dashboard, organized and ready for the host to review, manage, and download."]
 ];
 
 const steps = [
-  ["Set the frame", "Create your event, choose the upload window, and decide when the gallery should open."],
-  ["Capture on iPhone", "Guests use the Nightframe phone app to take and upload photos throughout the event."],
-  ["Relive it on the web", "When the time comes, everyone can return to one private, view-only gallery."]
+  ["Prepare the event", "The host chooses the event name, upload window, guest limits, and how many photos each person can contribute."],
+  ["Share the private QR", "Place it on tables, invitations, screens, or signs. The same event link can also be shared in a message."],
+  ["Guests choose their photos", "They enter their name, select one photo or many from their phone, and upload directly in the browser."],
+  ["The host receives everything", "New photos appear privately in the dashboard, where the host can review them and download the complete collection."]
+];
+
+const eventTypes = ["Weddings", "Engagements", "Birthdays", "Graduations", "Company events", "Family celebrations"];
+
+const faqs = [
+  ["Do guests need to download an app?", "No. The private upload page opens in the guest’s phone browser, so there is no installation or account creation."],
+  ["Can guests see photos uploaded by other people?", "No. Web-upload events keep the collection private to the host. Guests only see their own upload progress and confirmation."],
+  ["Can someone upload several photos together?", "Yes. Guests can choose one photo or a batch from their gallery. The host controls the per-guest and total event limits."],
+  ["When does the upload link work?", "The host sets the event’s start and end time. Uploading is available only while that private event window is open."],
+  ["What can the host do with the photos?", "The private dashboard lets the host view contributions, see who participated, manage individual photos, and download the collection."]
 ];
 
 export default function HomePage() {
@@ -42,7 +54,7 @@ export default function HomePage() {
           <p className="eyebrow mb-4">One night. Every perspective.</p>
           <h1 className="editorial-title max-w-3xl">The night, as everyone saw it.</h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-moss">
-            Capture every perspective in the Nightframe iPhone app, keep the photos hidden, and reveal the whole story later in one private web gallery.
+            Nightframe gives your event one private QR code. Guests scan it, choose photos from their phones, and send them directly to a host-only collection—no app or guest account required.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <a className="btn-dark px-5 py-3" href="#how-it-works">See how it works</a>
@@ -103,22 +115,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="features" className="grid gap-6 py-4 lg:grid-cols-3 lg:py-8">
-        {features.map(([Icon, title, copy]) => (
-          <article key={String(title)} className="surface p-6 sm:p-7">
-            <Icon className="h-7 w-7 text-coral" aria-hidden="true" />
-            <h2 className="mt-4 text-xl font-semibold">{title as string}</h2>
-            <p className="mt-2 leading-7 text-moss">{copy as string}</p>
-          </article>
-        ))}
+      <section id="features" className="py-4 lg:py-8">
+        <div className="mb-10 max-w-3xl sm:mb-14">
+          <p className="eyebrow mb-3">Simple for every guest</p>
+          <h2 className="text-3xl font-black leading-tight sm:text-5xl">The easiest way to bring everyone’s photos together.</h2>
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-moss">Nightframe removes the usual friction between taking a photo and getting it to the event host.</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          {features.map(([Icon, title, copy]) => (
+            <article key={String(title)} className="surface p-6 sm:p-8">
+              <Icon className="h-7 w-7 text-coral" aria-hidden="true" />
+              <h3 className="mt-5 text-xl font-semibold">{title as string}</h3>
+              <p className="mt-3 leading-7 text-moss">{copy as string}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section id="how-it-works" className="grid scroll-mt-8 gap-10 py-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-16 lg:py-10">
         <div>
           <p className="eyebrow mb-3">How it works</p>
-          <h2 className="text-3xl font-black leading-tight sm:text-5xl">Three steps. No guest accounts. Nothing to explain.</h2>
+          <h2 className="text-3xl font-black leading-tight sm:text-5xl">Four clear steps. Nothing complicated to explain.</h2>
           <p className="mt-4 max-w-xl leading-7 text-ink/70">
-            Nightframe stays out of the way during the event and brings everyone back together afterward.
+            From the first scan to the final download, every part of the experience stays focused on collecting memories quickly and privately.
           </p>
         </div>
         <div className="grid gap-5">
@@ -134,13 +153,59 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="grid gap-7 lg:grid-cols-2">
+        <article className="surface p-7 sm:p-9">
+          <Users className="h-8 w-8 text-coral" aria-hidden="true" />
+          <p className="eyebrow mb-3 mt-6">For guests</p>
+          <h2 className="text-3xl font-bold">Scan, choose, and send.</h2>
+          <p className="mt-4 leading-7 text-moss">Guests see a clean page carrying the event name and message. They enter their name, choose photos from their device, and watch each upload finish. They never need to enter the host dashboard or learn a new app.</p>
+        </article>
+        <article className="surface p-7 sm:p-9">
+          <Download className="h-8 w-8 text-coral" aria-hidden="true" />
+          <p className="eyebrow mb-3 mt-6">For the host</p>
+          <h2 className="text-3xl font-bold">One private collection.</h2>
+          <p className="mt-4 leading-7 text-moss">The host sees every contribution in one event workspace, together with participant names, upload totals, and storage use. Photos can be reviewed individually or downloaded together after the event.</p>
+        </article>
+      </section>
+
+      <section className="border-y hairline py-12 sm:py-16">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-16">
+          <div>
+            <p className="eyebrow mb-3">Made for gathering</p>
+            <h2 className="text-3xl font-black leading-tight sm:text-4xl">Useful anywhere memories are shared.</h2>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {eventTypes.map((eventType) => <span key={eventType} className="rounded-full border hairline bg-white/30 px-4 py-2 text-sm font-semibold">{eventType}</span>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-10 py-6 lg:grid-cols-[0.7fr_1.3fr] lg:gap-16 lg:py-10">
+        <div>
+          <p className="eyebrow mb-3">Questions</p>
+          <h2 className="text-3xl font-black leading-tight sm:text-5xl">Good to know.</h2>
+          <p className="mt-4 leading-7 text-moss">A few details about what guests and hosts can expect.</p>
+        </div>
+        <div className="divide-y hairline border-y hairline">
+          {faqs.map(([question, answer]) => (
+            <details key={question} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 font-semibold">
+                <span>{question}</span>
+                <span className="text-xl font-normal text-coral transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+              </summary>
+              <p className="max-w-2xl pb-2 pt-4 leading-7 text-moss">{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <section className="relative mb-8 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0f1b2d] p-8 shadow-[0_32px_100px_rgba(0,0,0,0.32)] sm:p-12 lg:p-14">
         <img src="/app-icon-192.png" alt="" className="pointer-events-none absolute -right-16 -top-24 h-80 w-80 rounded-[4rem] object-contain opacity-[0.06]" aria-hidden="true" />
         <div className="relative">
           <p className="eyebrow mb-3">Your night deserves every angle</p>
           <h2 className="text-3xl font-black leading-tight text-white sm:text-4xl">Make a gallery nobody else could have photographed.</h2>
           <p className="mt-3 max-w-2xl leading-7 text-white/65">
-            One private QR lets every guest contribute their perspective while Nightframe keeps the collection organized for the host.
+            One private QR lets every guest contribute their perspective while Nightframe keeps the entire collection organized and private for the host.
           </p>
         </div>
       </section>
